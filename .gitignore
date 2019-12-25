@@ -27,3 +27,5 @@ config.*
 
 # Static libraries
 *.la
+
+/images/*

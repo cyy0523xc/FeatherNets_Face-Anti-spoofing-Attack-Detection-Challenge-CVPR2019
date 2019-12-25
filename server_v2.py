@@ -9,8 +9,10 @@ from models import FeatherNet
 from PIL import Image
 import torchvision.transforms as transforms
 
+model = None
 transform = None
-model_path = './checkpoints/FeatherNetB_bs32/_47_best.pth.tar'
+# model_path = './checkpoints/FeatherNetB_bs32/_47_best.pth.tar'
+model_path = './checkpoints/FeatherNetB_bs32-ir/_54.pth.tar'
 
 
 def check_spoofing(image):
@@ -49,9 +51,11 @@ def get_model():
         transforms.ToTensor(),
         normalize,
     ])
+    return model
 
 
 if __name__ == '__main__':
+    import sys
     model = get_model()
-    check_spoofing(Image.open('./images/fake.jpg'))
-    check_spoofing(Image.open('./images/real.jpg'))
+    res = check_spoofing(Image.open(sys.argv[1]))
+    print(res)

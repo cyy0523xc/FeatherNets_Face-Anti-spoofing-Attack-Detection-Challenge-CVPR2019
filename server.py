@@ -21,8 +21,8 @@ trans = None
 
 
 class Args:
-    config = 'cfgs/FeatherNet54-se-64.yaml'
-    resume = './checkpoints/FeatherNet54-se/_68_best.pth.tar'
+    config = 'cfgs/FeatherNetB-32-ir.yaml'
+    resume = './checkpoints/FeatherNetB_bs32-ir/_54.pth.tar'
     input_size = 224
     image_size = 224
     lr = 0.1
