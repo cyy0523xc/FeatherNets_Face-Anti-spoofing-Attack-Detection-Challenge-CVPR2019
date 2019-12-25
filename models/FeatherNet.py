@@ -2,7 +2,7 @@
 # the code base on https://github.com/tonylins/pytorch-mobilenet-v2
 import torch.nn as nn
 import math
-import torch
+
 
 def conv_bn(inp, oup, stride):
     return nn.Sequential(
@@ -19,7 +19,8 @@ def conv_1x1_bn(inp, oup):
         nn.ReLU6(inplace=True)
     )
 
-# reference form : https://github.com/moskomule/senet.pytorch  
+
+# reference form : https://github.com/moskomule/senet.pytorch
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=8):
         super(SELayer, self).__init__()
@@ -36,7 +37,8 @@ class SELayer(nn.Module):
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
         return x * y
-     
+
+
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio, downsample=None):
         super(InvertedResidual, self).__init__()
@@ -50,7 +52,8 @@ class InvertedResidual(nn.Module):
         if expand_ratio == 1:
             self.conv = nn.Sequential(
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1,
+                          groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
                 # pw-linear
@@ -64,7 +67,8 @@ class InvertedResidual(nn.Module):
                 nn.BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1,
+                          groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
                 # pw-linear
@@ -83,7 +87,8 @@ class InvertedResidual(nn.Module):
 
 
 class FeatherNet(nn.Module):
-    def __init__(self, n_class=2, input_size=224, se = False, avgdown=False, width_mult=1.):
+    def __init__(self, n_class=2, input_size=224, se=False, avgdown=False,
+                 width_mult=1.):
         super(FeatherNet, self).__init__()
         block = InvertedResidual
         input_channel = 32
@@ -93,15 +98,16 @@ class FeatherNet(nn.Module):
         interverted_residual_setting = [
             # t, c, n, s
             [1, 16, 1, 2],
-            [6, 32, 2, 2], # 56x56
-            [6, 48, 6, 2], # 14x14
-            [6, 64, 3, 2], # 7x7
+            [6, 32, 2, 2],   # 56x56
+            [6, 48, 6, 2],   # 14x14
+            [6, 64, 3, 2],   # 7x7
         ]
 
         # building first layer
         assert input_size % 32 == 0
         input_channel = int(input_channel * width_mult)
-        self.last_channel = int(last_channel * width_mult) if width_mult > 1.0 else last_channel
+        self.last_channel = int(last_channel * width_mult) \
+            if width_mult > 1.0 else last_channel
         self.features = [conv_bn(3, input_channel, 2)]
         # building inverted residual blocks
         for t, c, n, s in interverted_residual_setting:
@@ -110,31 +116,38 @@ class FeatherNet(nn.Module):
                 downsample = None
                 if i == 0:
                     if self.avgdown:
-                        downsample = nn.Sequential(nn.AvgPool2d(2, stride=2),
-                        nn.BatchNorm2d(input_channel),
-                        nn.Conv2d(input_channel, output_channel , kernel_size=1, bias=False)
-                        )
-                    self.features.append(block(input_channel, output_channel, s, expand_ratio=t, downsample = downsample))
+                        pool2d = nn.AvgPool2d(2, stride=2)
+                        norm2d = nn.BatchNorm2d(input_channel)
+                        conv2d = nn.Conv2d(input_channel, output_channel,
+                                           kernel_size=1, bias=False)
+                        downsample = nn.Sequential(pool2d, norm2d, conv2d)
+                    self.features.append(block(input_channel, output_channel,
+                                               s, expand_ratio=t,
+                                               downsample=downsample))
                 else:
-                    self.features.append(block(input_channel, output_channel, 1, expand_ratio=t, downsample = downsample))
+                    self.features.append(block(input_channel, output_channel,
+                                               1, expand_ratio=t,
+                                               downsample=downsample))
                 input_channel = output_channel
             if self.se:
                 self.features.append(SELayer(input_channel))
 
         # make it nn.Sequential
         self.features = nn.Sequential(*self.features)
-#         building last several layers        
-        self.final_DW = nn.Sequential(nn.Conv2d(input_channel, input_channel, kernel_size=3, stride=2, padding=1,
-                                  groups=input_channel, bias=False),
-                                     )
-
+        #         building last several layers
+        self.final_DW = nn.Sequential(nn.Conv2d(input_channel, input_channel,
+                                                kernel_size=3, stride=2,
+                                                padding=1,
+                                                groups=input_channel,
+                                                bias=False),
+                                      )
 
         self._initialize_weights()
 
     def forward(self, x):
         x = self.features(x)
         x = self.final_DW(x)
-        
+
         x = x.view(x.size(0), -1)
         return x
 
@@ -153,12 +166,12 @@ class FeatherNet(nn.Module):
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
 
+
 def FeatherNetA():
-    model = FeatherNet(se = True)
+    model = FeatherNet(se=True)
     return model
+
 
 def FeatherNetB():
-    model = FeatherNet(se = True,avgdown=True)
+    model = FeatherNet(se=True, avgdown=True)
     return model
-
-

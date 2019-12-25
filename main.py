@@ -113,7 +113,7 @@ def main():
         model = models.__dict__[args.arch]()
     device = torch.device('cuda:' + str(args.gpus[0]) if torch.cuda.is_available() else "cpu")
     str_input_size = '1x3x224x224'
-    if args.summary: 
+    if args.summary:
         input_size = tuple(int(x) for x in str_input_size.split('x'))
         stat(model,input_size)
         return
@@ -124,7 +124,7 @@ def main():
         model = torch.nn.DataParallel(model,device_ids=args.gpus)
         model.to(device)
 
-    
+
     count_params(model)
     pytorch_total_params = sum(p.numel() for p in model.parameters())
     print('total_params',pytorch_total_params)
@@ -134,13 +134,13 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr, momentum=args.momentum,
                                 weight_decay=args.weight_decay)
-    
+
     if args.speed:
         input_size = tuple(int(x) for x in str_input_size.split('x') )
         iteration = 1000
         compute_speed(model,input_size,device,iteration)
         return
-    
+
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -157,7 +157,7 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
-    
+
 
     # Data loading code
     normalize = transforms.Normalize(mean=[0.14300402, 0.1434545, 0.14277956],  ##accorcoding to casia-surf val to commpute
@@ -207,7 +207,7 @@ def main():
         if is_best:
             print('epoch: {} The best is {} last best is {}'.format(epoch,prec1,best_prec1))
         best_prec1 = max(prec1, best_prec1)
-        
+
         if not os.path.exists(args.save_path):
             os.mkdir(args.save_path)
         save_name = '{}/{}_{}_best.pth.tar'.format(args.save_path, args.model_name, epoch) if is_best else\
