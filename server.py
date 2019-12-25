@@ -9,7 +9,6 @@ import yaml
 import torch
 from PIL import Image
 import torchvision.transforms as transforms
-from torch.autograd.variable import Variable
 import models
 
 gpus = '0'
@@ -47,14 +46,11 @@ def init(args):
         model = models.__dict__[args.arch]()
 
     if USE_GPU:
-        # cudnn.benchmark = True
-        # torch.cuda.manual_seed_all(args.random_seed)
         args.gpus = [int(i) for i in args.gpus.split(',')]
         model = torch.nn.DataParallel(model, device_ids=args.gpus)
         model.to(device)
 
     # optionally resume from a checkpoint
-    print(os.getcwd())
     if os.path.isfile(args.resume):
         print("=> loading checkpoint '{}'".format(args.resume))
         checkpoint = torch.load(args.resume)
@@ -64,7 +60,7 @@ def init(args):
     else:
         print("=> no checkpoint found at '{}'".format(args.resume))
 
-    model.eval()
+    # model.eval()
     normalize = transforms.Normalize(mean=[0.14300402, 0.1434545, 0.14277956],
                                      std=[0.10050353, 0.100842826, 0.10034215])
     img_size = args.input_size
@@ -85,15 +81,14 @@ def predict(image, args):
     :param image Image.open and RGB
     """
     pred_time = time.time()
-    image = trans(image)
+    image = trans(image).unsqueeze(0)
     with torch.no_grad():
-        input_var = Variable(image).float().to(device)
-        output = model(input_var)
+        output = model(image)
         soft_output = torch.softmax(output, dim=-1)
         _, predicted = torch.max(soft_output.data, 1)
         predicted = predicted.to('cpu').detach().numpy()
 
-    print('Predict Time: %.2f' % (time.time() - pred_time))
+    print('Predict Time: %.4f' % (time.time() - pred_time))
     return predicted
 
 
